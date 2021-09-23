@@ -13,8 +13,9 @@
     "format:write": "prettier --write .",
     "lint:check": "eslint src --cache",
     "lint:fix": "eslint src --cache --fix",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "test": "cross-env CI=true react-scripts test --env=jsdom",
+    "eject": "react-scripts eject",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@testing-library/jest-dom": "^5.11.4",
@@ -26,6 +27,7 @@
     "@types/react-dom": "^17.0.0",
     "@typescript-eslint/eslint-plugin": "^4.31.2",
     "@typescript-eslint/parser": "^4.31.2",
+    "cross-env": "^7.0.3",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-jest": "^24.4.2",
@@ -34,6 +36,7 @@
     "eslint-plugin-react-hooks": "^4.2.0",
     "eslint-plugin-sonarjs": "^0.10.0",
     "eslint-plugin-testing-library": "^4.12.3",
+    "lint-staged": "^11.1.2",
     "prettier": "^2.4.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -53,5 +56,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "husky": "^7.0.0"
   }
 }
