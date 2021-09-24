@@ -21,15 +21,7 @@ module.exports = {
       version: 'detect',
     },
   },
-  plugins: [
-    'react',
-    '@typescript-eslint',
-    'react-hooks',
-    'sonarjs',
-    'jsx-a11y',
-    'testing-library',
-    'jest',
-  ],
+  plugins: ['react', '@typescript-eslint', 'react-hooks', 'sonarjs', 'jsx-a11y', 'testing-library', 'jest'],
   extends: [
     'eslint:recommended',
     'plugin:react/recommended',
