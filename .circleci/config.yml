@@ -1,10 +1,17 @@
 version: 2.1
 
+orbs:
+  slack: circleci/slack@4.4.4
+
 executors:
   app-executor:
     docker:
       - image: cimg/node:16.3.0
     working_directory: ~/project
+  slack-executor:
+    docker:
+      - image: 'cimg/base:stable'
+    resource_class: small
 
 aliases:
   - &show-current-branch-name
@@ -105,7 +112,6 @@ jobs:
             else 
               aws --region ${AWS_REGION} s3 sync ~/project/build s3://${AWS_BUCKET_DEVELOPMENT} --delete
             fi
-
   deploy-to-cloudfront:
     executor: app-executor
     steps:
@@ -127,6 +133,65 @@ jobs:
             else 
               aws cloudfront create-invalidation --distribution-id ${DISTRIBUTION_ID_DEVELOPMENT} --paths /\*
             fi
+  notify-via-slack:
+    executor: slack-executor
+    steps:
+      - run: echo "Slack notification"
+      - slack/notify:
+          event: 'always'
+          channel: 'circleci-cra-movies'
+          template: ''
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "${CIRCLE_BRANCH} branch deployment to aws s3 and cloudfront is complete. 👍",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Project*:\n$CIRCLE_PROJECT_REPONAME"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch*:\n$CIRCLE_BRANCH"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*When*:\n$(date +'%m/%d/%Y %T')"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Build*:\n$CIRCLE_BUILD_NUM"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author*:\n$CIRCLE_PROJECT_USERNAME"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Job"
+                      },
+                      "url": "${CIRCLE_BUILD_URL}"
+                    }
+                  ]
+                }
+              ]
+            }
 
 workflows:
   build_and_deploy:
@@ -152,8 +217,7 @@ workflows:
                 - production
       - jest:
           requires:
-            - linting
-            - prettier
+            - build
           filters:
             branches:
               only:
@@ -162,7 +226,9 @@ workflows:
                 - production
       - deploy-to-s3:
           requires:
+            - linting
             - prettier
+            - jest
           filters:
             branches:
               only:
@@ -172,6 +238,15 @@ workflows:
       - deploy-to-cloudfront:
           requires:
             - deploy-to-s3
+          filters:
+            branches:
+              only:
+                - development
+                - staging
+                - production
+      - notify-via-slack:
+          requires:
+            - deploy-to-cloudfront
           filters:
             branches:
               only:
